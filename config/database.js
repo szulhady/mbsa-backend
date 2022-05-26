@@ -8,7 +8,8 @@ const mysql = require("mysql");
 //   port: 3306,
 // });
 const connection = mysql.createPool ({
-  host: "178.128.29.241",
+  // host: "178.128.29.241",
+  host: "localhost",
   user: "root",
   password: "password",
   database: "mbsa",

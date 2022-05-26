@@ -4,6 +4,18 @@ const port = 7777
 const cors = require('cors')
 const moment = require('moment')
 const connection = require("./config/database");
+const passport = require( 'passport' );
+
+ //Passport middleware
+ app.use(passport.initialize());
+ app.use(passport.session());
+ passport.serializeUser(function (user, done) {
+   done(null, user);
+ });
+ 
+ passport.deserializeUser(async function (user, done) {
+   done(null, user);
+ });
 
 app.use(cors())
 app.use( express.json() );
@@ -35,7 +47,7 @@ app.get('/api/total', (req,res)=>{
 
 app.get('/api/total/weekday', (req,res)=>{
   let dat;
-  var q = `select SUM(ec) as total, DAYNAME(date) as day, WEEKDAY(date) as dayname, YEAR(date) as year, WEEK(date,5) - WEEK(DATE_SUB(date,INTERVAL DAYOFMONTH(date)-1 DAY),5) + 1 as week from building_data WHERE YEAR(date)=YEAR(CURDATE())-1  GROUP BY YEAR(date),week, day ,WEEKDAY(date) ORDER BY YEAR(date),week, WEEKDAY(date);`;
+  var q = `select SUM(ec) as total, DAYNAME(date) as day, WEEKDAY(date) as dayname, YEAR(date) as year, WEEK(date,5) - WEEK(DATE_SUB(date,INTERVAL DAYOFMONTH(date)-1 DAY),5) + 1 as week from building_data WHERE YEAR(date)=YEAR(CURDATE())-1  GROUP BY year,week, day ,dayname ORDER BY year,week, dayname;`;
 
   connection.query(q, function (error, row, fields) {
     if (error) {
@@ -121,17 +133,6 @@ app.get('/api/total/latest', (req,res)=>{
       console.log(error);
       }
     if (row) {
-      // let totalArray=[]
-      // let monthArray=[]
-      // for(let i =0; i<row.length; i++){
-      //   totalArray.push(row[i].total)
-      //   monthArray.push(row[i].month)
-      // console.log(row)
-      // }
-      // dat={
-      //   total:totalArray,
-      //   month:monthArray
-      // }
       res.send(row)
     }
     });
@@ -146,22 +147,16 @@ app.get('/api/total/latestMBSA', (req,res)=>{
       console.log(error);
       }
     if (row) {
-      // let totalArray=[]
-      // let monthArray=[]
-      // for(let i =0; i<row.length; i++){
-      //   totalArray.push(row[i].total)
-      //   monthArray.push(row[i].month)
-      // console.log(row)
-      // }
-      // dat={
-      //   total:totalArray,
-      //   month:monthArray
-      // }
       res.send(row)
     }
     });
   }
 )
+
+
+// API FOR USER/AUTH 
+app.use("/api/auth", require("./routes/user/auth"))
+app.use("/api/user", require("./routes/user/user"))
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
@@ -186,7 +181,7 @@ app.post("/copyTable", async (req,res)=>{
       database: "mbsa",
     },
     dump:{
-      tables:["building_data"],
+      tables:["mbsa_users"],
       // tables:[req.body.table],
       // tables:["users_nexplex_agriculture_mobile"],
       schema:{
